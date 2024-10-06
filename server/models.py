@@ -10,50 +10,83 @@ metadata = MetaData(naming_convention={
 
 db = SQLAlchemy(metadata=metadata)
 
-
+# Hero Model
 class Hero(db.Model, SerializerMixin):
     __tablename__ = 'heroes'
 
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String)
-    super_name = db.Column(db.String)
+    super_name = db.Column(db.String, nullable=False)
+    
+    # Relationship to HeroPower (many-to-many via HeroPower)
+    hero_powers = db.relationship('HeroPower', back_populates='hero')
 
-    # add relationship
+    # Association Proxy to Powers via HeroPower
+    powers = association_proxy('hero_powers', 'power')
 
-    # add serialization rules
+    # Serialization rules to include only necessary fields
+    serialize_rules = ('-hero_powers.hero',)
 
     def __repr__(self):
-        return f'<Hero {self.id}>'
+        return f'<Hero {self.id}: {self.name}>'
 
-
+# Power Model
 class Power(db.Model, SerializerMixin):
     __tablename__ = 'powers'
 
     id = db.Column(db.Integer, primary_key=True)
-    name = db.Column(db.String)
-    description = db.Column(db.String)
+    name = db.Column(db.String, nullable=False)
+    description = db.Column(db.String, nullable=False)
 
-    # add relationship
+    # Relationship to HeroPower (many-to-many via HeroPower)
+    hero_powers = db.relationship('HeroPower', back_populates='power', cascade='all, delete')
 
-    # add serialization rules
+    # Association Proxy to Heroes via HeroPower
+    heroes = association_proxy('hero_powers', 'hero')
 
-    # add validation
+    # Serialization rules to include only necessary fields
+    serialize_rules = ('-hero_powers.power',)
 
-    def __repr__(self):
-        return f'<Power {self.id}>'
+    # Validation for description
+    @validates('description')
+    def validate_description(self, key, value):
+        if len(value) < 20:
+            raise ValueError("Description must be at least 20 characters long")
+        return value
 
+    def to_dict(self, include_hero_powers=False):
+        power_dict = {
+            "id": self.id,
+            "name": self.name,
+            "description": self.description,
+        }
+        if include_hero_powers:
+            power_dict["hero_powers"] = [hero_power.to_dict() for hero_power in self.hero_powers]
+        return power_dict
 
+# HeroPower (Join Table)
 class HeroPower(db.Model, SerializerMixin):
     __tablename__ = 'hero_powers'
 
     id = db.Column(db.Integer, primary_key=True)
     strength = db.Column(db.String, nullable=False)
+    hero_id = db.Column(db.Integer, db.ForeignKey('heroes.id'))
+    power_id = db.Column(db.Integer, db.ForeignKey('powers.id'))
+    
+    # Foreign keys for Hero and Power
+    hero = db.relationship('Hero', back_populates='hero_powers')
+    power = db.relationship('Power', back_populates='hero_powers')
 
-    # add relationships
+    # Serialize relationships
+    serialize_rules = ('-hero.hero_powers', '-power.hero_powers')
 
-    # add serialization rules
-
-    # add validation
+    # Validation for strength
+    @validates('strength')
+    def validate_strength(self, key, value):
+        if value not in ['Strong', 'Weak', 'Average']:
+            raise ValueError("validation errors")
+        return value
 
     def __repr__(self):
-        return f'<HeroPower {self.id}>'
+        return f'<HeroPower {self.id}: Hero {self.hero_id} Power {self.power_id}>'
+
