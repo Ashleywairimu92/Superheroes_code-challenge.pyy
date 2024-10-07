@@ -18,13 +18,13 @@ class Hero(db.Model, SerializerMixin):
     name = db.Column(db.String)
     super_name = db.Column(db.String, nullable=False)
     
-    # Relationship to HeroPower (many-to-many via HeroPower)
+
     hero_powers = db.relationship('HeroPower', back_populates='hero')
 
-    # Association Proxy to Powers via HeroPower
+ 
     powers = association_proxy('hero_powers', 'power')
 
-    # Serialization rules to include only necessary fields
+  
     serialize_rules = ('-hero_powers.hero',)
 
     def __repr__(self):
@@ -38,16 +38,16 @@ class Power(db.Model, SerializerMixin):
     name = db.Column(db.String, nullable=False)
     description = db.Column(db.String, nullable=False)
 
-    # Relationship to HeroPower (many-to-many via HeroPower)
+  
     hero_powers = db.relationship('HeroPower', back_populates='power', cascade='all, delete')
 
-    # Association Proxy to Heroes via HeroPower
+ 
     heroes = association_proxy('hero_powers', 'hero')
 
-    # Serialization rules to include only necessary fields
+ 
     serialize_rules = ('-hero_powers.power',)
 
-    # Validation for description
+
     @validates('description')
     def validate_description(self, key, value):
         if len(value) < 20:
@@ -64,7 +64,7 @@ class Power(db.Model, SerializerMixin):
             power_dict["hero_powers"] = [hero_power.to_dict() for hero_power in self.hero_powers]
         return power_dict
 
-# HeroPower (Join Table)
+
 class HeroPower(db.Model, SerializerMixin):
     __tablename__ = 'hero_powers'
 
@@ -73,14 +73,14 @@ class HeroPower(db.Model, SerializerMixin):
     hero_id = db.Column(db.Integer, db.ForeignKey('heroes.id'))
     power_id = db.Column(db.Integer, db.ForeignKey('powers.id'))
     
-    # Foreign keys for Hero and Power
+   
     hero = db.relationship('Hero', back_populates='hero_powers')
     power = db.relationship('Power', back_populates='hero_powers')
 
-    # Serialize relationships
+
     serialize_rules = ('-hero.hero_powers', '-power.hero_powers')
 
-    # Validation for strength
+
     @validates('strength')
     def validate_strength(self, key, value):
         if value not in ['Strong', 'Weak', 'Average']:

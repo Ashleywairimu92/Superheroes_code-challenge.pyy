@@ -26,14 +26,14 @@ def index():
 @app.route('/heroes', methods=['GET'])
 def get_all_heroes():
     
-    #   In your GET /heroes route
+    
       heroes = Hero.query.all()
       heroes_data = [
     {
         "id": hero.id,
         "name": hero.name,
         "super_name": hero.super_name,
-        # Ensure hero_powers is not included
+       
     }
     for hero in heroes
 ]
@@ -63,7 +63,7 @@ def get_all_powers():
         "id": power.id,
         "name": power.name,
         "description": power.description,
-        # Ensure hero_powers is not included
+       
     }
     for power in powers
 ]
@@ -85,7 +85,7 @@ def update_powers(id):
     
     try:
         if 'description' in request.json:
-            power.description = request.json['description']  # This may raise ValueError
+            power.description = request.json['description']  
         db.session.commit()
         return make_response(power.to_dict(), 200)
     except ValueError as e:
@@ -103,7 +103,7 @@ def post_hero_powers():
         )
         db.session.add(hero_power)
         db.session.commit()
-        return jsonify(hero_power.to_dict()), 200  # Replace with your dict method
+        return jsonify(hero_power.to_dict()), 200 
     except ValueError as e:
         return jsonify({"errors": [str(e)]}), 400
     except Exception as e:
